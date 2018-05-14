@@ -50,7 +50,7 @@ public class Main extends HttpServlet {
      * @param username
      */
 	public void loginNew(String img, HttpServletResponse response, String username) {
-        FaceDetection facedet = new FaceDetection();
+        Face facedet = new Face();
 		FileInputStream fis = null;
 		BufferedReader bur = null;
 		StringBuffer sb = null;
@@ -73,6 +73,7 @@ public class Main extends HttpServlet {
 				System.out.println("GG");
 			}else {
             result = facedet.faceMarchByBaidu(img,sb.toString());  //导入人脸识别算法
+            //result = facedet.faceMarchByOpenCV(img,sb.toString());
 			}
 			
             if (result > 80) {  
