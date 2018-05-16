@@ -1,12 +1,6 @@
 package hw.service;  
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.SQLException;
   
@@ -32,13 +26,13 @@ public class Main extends HttpServlet {
         String img       = request.getParameter("img");            //图像数据  
         String username  = request.getParameter("username");       //用户名  
         String tag       = request.getParameter("tag");  
-        String password  = "123456";
+        String password  = request.getParameter("password");
 
         if(tag.equals("reg")){  
-            //注册  
+        	System.out.println("进入用户注册程序");
         	register(username, img, password);
         }else if(tag.endsWith("login")){  
-            //登陆  
+        	System.out.println("进入用户登录程序");
             loginNew(img, response, username);
         }       
     }  
@@ -50,49 +44,25 @@ public class Main extends HttpServlet {
      * @param username
      */
 	public void loginNew(String img, HttpServletResponse response, String username) {
-        Face facedet = new Face();
-		FileInputStream fis = null;
-		BufferedReader bur = null;
-		StringBuffer sb = null;
 		PrintWriter out = null;
 		Double result = 50.00;
         try {  
             out = response.getWriter();  
-            String photo = Function.getPhoto(username);
-		
-			fis = new FileInputStream("D:\\picture\\"+photo);
-			bur = new BufferedReader(new InputStreamReader(fis));
-			sb = new StringBuffer();
-			
-			String temp = null;
-			while((temp=bur.readLine())!=null) {
-				sb.append(temp);
-			}
-			
+            String photo = Function.getPhoto(username);			
 			if(photo.equals("null")) {
-				System.out.println("GG");
+				out.print("用户未注册");
 			}else {
-            result = facedet.faceMarchByBaidu(img,sb.toString());  //导入人脸识别算法
-            //result = facedet.faceMarchByOpenCV(img,sb.toString());
+            //result = Face.faceMarchByBaidu(img,photo);  //百度云人脸识别接口
+            result = Face.faceMarchByOpenCV(img,photo);   //OpenCV人脸识别
+	            if (result > 80) {  
+	                out.print("登陆成功");    
+	            }else{  
+	                out.print("登陆失败");  
+	            }  
 			}
-			
-            if (result > 80) {  
-                out.print("登陆成功");    
-            }else{  
-                out.print("登陆失败");  
-            }  
         } catch (IOException | ClassNotFoundException | SQLException e) {  
             e.printStackTrace();  
-        }finally {
-        	try {
-				bur.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        }
-        
-		
+        }		
 	}
 	
 	/**
@@ -102,38 +72,11 @@ public class Main extends HttpServlet {
 	 * @param password
 	 */
 	private void register(String username, String img, String password) {
-		Users user = new Users();
-		String fileName = System.currentTimeMillis()+".png";
-		ByteArrayInputStream bi = null;
-		FileOutputStream out = null;
-		
-		//保存图片到本地
-		try {
-			bi = new ByteArrayInputStream(img.getBytes());
-			out = new FileOutputStream("D:\\picture\\"+fileName);  
-			byte[] buf = new byte[1024];
-			int len = 0;
-			while((len = bi.read(buf))!= -1) {
-				out.write(buf);
-			}
-			out.flush();  
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}finally {
-			try {
-				out.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} 
-			try {
-				bi.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-        
+		Users user = new Users();		
+		String fileName = System.currentTimeMillis()+".jpg";		
+		Face.SaveImageByOpenCV(img, "D:\\picture\\database\\opencv_img\\"+fileName);
+		Face.SaveImageByBaidu(img, "D:\\picture\\database\\baidu_img\\"+fileName);
+
 		//写入数据到实体类中
         user.setId(((Long)System.currentTimeMillis()).intValue());  
         user.setUsername(username);  

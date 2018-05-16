@@ -1,20 +1,30 @@
 package hw.faceAlgorithm;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDMatch;
+import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.features2d.DMatch;
+import org.opencv.features2d.DescriptorExtractor;
+import org.opencv.features2d.DescriptorMatcher;
+import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.Features2d;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
 public class FaceDetection {
 	
-	public static void detectFace()  
+	public static Mat detectFace(String photo)  
     {  
         System.out.println("\nRunning DetectFaceDemo");  
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -22,12 +32,12 @@ public class FaceDetection {
         CascadeClassifier faceDetector = new CascadeClassifier(  
                 "D:\\temp_kaifa_java\\myFaceDetection\\WebContent\\haarcascade_frontalface_alt.xml");  
         // 读取一张图片 
-        Mat image = Imgcodecs.imread("D:\\picture\\1.jpg");
+        //Mat image = Imgcodecs.imread(photo);
+        Mat image = Highgui.imread(photo);
         // 在图片中检测人脸  
         MatOfRect faceDetections = new MatOfRect();  
         faceDetector.detectMultiScale(image, faceDetections);  
-        System.out.println(String.format("Detected %s faces",  
-                faceDetections.toArray().length));  
+        System.out.println(String.format("Detected %s faces",faceDetections.toArray().length));  
         //判断有多少个人脸，正常情况下只需要一个人脸
         Rect[] rects = faceDetections.toArray();  
         if(rects != null && rects.length > 1){  
@@ -35,109 +45,154 @@ public class FaceDetection {
         }  
         // 在每一个识别出来的人脸周围画出一个方框  
         Rect rect = rects[0];  
-        Imgproc.rectangle(image, new Point(rect.x-2, rect.y-2), new Point(rect.x  
+        //Imgproc.rectangle(image, new Point(rect.x-2, rect.y-2), new Point(rect.x  
+        //        + rect.width, rect.y + rect.height), new Scalar(0, 255, 0)); 
+        Core.rectangle(image, new Point(rect.x-2, rect.y-2), new Point(rect.x  
                 + rect.width, rect.y + rect.height), new Scalar(0, 255, 0)); 
         //截取方框中的人脸
-        Mat sub = image.submat(rect);//根据方框获取新图像-人脸
+        Mat sub = image.submat(rect);//根据方框获取新图像-人脸      
         Mat mat = new Mat();  
         Size size = new Size(300, 300);  
         Imgproc.resize(sub, mat, size);//将人脸进行截图并保存到mat中
-  
         // 将结果保存到文件
-        String filename = "D:\\picture\\faceDetection.png";  
-        System.out.println(String.format("Writing %s", filename));  
-        Imgcodecs.imwrite(filename, mat);  
+        String filename = System.currentTimeMillis()+".jpg";	
+        System.out.println(String.format("写入人脸图片：%s", filename));
+        //Imgcodecs.imwrite(filename, mat);  
+        Highgui.imwrite("D:\\picture\\detection\\"+filename, mat);    
+        
+        mat = prepImage(mat);
+        return mat;
+        
+        //Mat src = Highgui.imread("D:\\picture\\2.jpg");   
+        //Highgui.imwrite("D:\\picture\\Test.jpg", FeatureOrbLannbased(sub, sub)); 
+        //prepImage(mat);
     }  
 	
-	
-	
-    /** - 反色处理 - */
-    public Mat inverse(Mat image) {
-        int width = image.cols();
-        int height = image.rows();
-        int dims = image.channels();
-        byte[] data = new byte[width*height*dims];
-        image.get(0, 0, data);
-
-        int index = 0;
-        int r=0, g=0, b=0;
-        for(int row=0; row<height; row++) {
-            for(int col=0; col<width*dims; col+=dims) {
-                index = row*width*dims + col;
-                b = data[index]&0xff;
-                g = data[index+1]&0xff;
-                r = data[index+2]&0xff;
-
-                r = 255 - r;
-                g = 255 - g;
-                b = 255 - b;
-
-                data[index] = (byte)b;
-                data[index+1] = (byte)g;
-                data[index+2] = (byte)r;
-            }
-        }
-
-        image.put(0, 0, data);
-        return image;
-    }
-
-    public Mat brightness(Mat image) {
-        // 亮度提升
-        Mat dst = new Mat();
-        Mat black = Mat.zeros(image.size(), image.type());
-        Core.addWeighted(image, 1.2, black, 0.5, 0, dst);
-        return dst;
-    }
-
-    public Mat darkness(Mat image) {
-        // 亮度降低
-        Mat dst = new Mat();
-        Mat black = Mat.zeros(image.size(), image.type());
-        Core.addWeighted(image, 0.5, black, 0.5, 0, dst);
-        return dst;
-    }
-
-    public Mat gray(Mat image) {
-        // 灰度
+    public static Mat prepImage(Mat image) { 
+        // 灰度化处理
         Mat gray = new Mat();
         Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY);
-        return gray;
+        //直方图均衡化
+        Mat balance = new Mat();
+        Imgproc.equalizeHist(gray,balance);
+       
+/*        String filename = "D:\\picture\\facePrepare.png";  
+        System.out.println(String.format("Writing %s", filename));  
+        Highgui.imwrite(filename, balance);  */
+        return balance;
     }
-
-    public Mat sharpen(Mat image) {
-        // 锐化
-        Mat dst = new Mat();
-        float[] sharper = new float[]{0, -1, 0, -1, 5, -1, 0, -1, 0};
-        Mat operator = new Mat(3, 3, CvType.CV_32FC1);
-        operator.put(0, 0, sharper);
-        Imgproc.filter2D(image, dst, -1, operator);
-        return dst;
+    
+    //
+    public static Mat FeatureOrbLannbased(Mat src, Mat dst){  
+    	long start = System.currentTimeMillis();
+        FeatureDetector fd = FeatureDetector.create(FeatureDetector.ORB);  
+        DescriptorExtractor de = DescriptorExtractor.create(DescriptorExtractor.ORB);  
+        DescriptorMatcher Matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_L1);  
+        MatOfKeyPoint mkp = new MatOfKeyPoint(); 
+        fd.detect(src, mkp);   Mat desc = new Mat();  
+        de.compute(src, mkp, desc);
+        Features2d.drawKeypoints(src, mkp, src);      
+        MatOfKeyPoint mkp2 = new MatOfKeyPoint();  
+        fd.detect(dst, mkp2); Mat desc2 = new Mat();  
+        de.compute(dst, mkp2, desc2);
+        Features2d.drawKeypoints(dst, mkp2, dst);  
+        MatOfDMatch Matches = new MatOfDMatch();  
+        Matcher.match(desc, desc2, Matches);    
+        double maxDist = Double.MIN_VALUE;  
+        double minDist = Double.MAX_VALUE;  
+        System.out.println("获取特征点个数"+Matches.rows());
+        DMatch[] mats = Matches.toArray();  
+        for (int i = 0; i < mats.length; i++) {  
+            double dist = mats[i].distance;  
+            if (dist < minDist) { minDist = dist;}  
+            if (dist > maxDist) { maxDist = dist;}}  
+        List<DMatch> goodMatch = new LinkedList<>();  
+        for (int i = 0; i < mats.length; i++) {  
+            double dist = mats[i].distance;  
+            if (dist < 3 * minDist && dist < 0.2f) {goodMatch.add(mats[i]);}}  
+        Matches.fromList(goodMatch);  
+        System.out.println("有效特征点个数"+Matches.rows());
+        Mat OutImage = new Mat();  
+        Features2d.drawMatches(src, mkp, dst, mkp2, Matches, OutImage);   
+        Highgui.imwrite("D:\\picture\\detection\\result_orb.jpg", OutImage); 
+        System.out.println("识别用时："+(System.currentTimeMillis() - start)+"ms");
+        return OutImage;  
     }
-
-    public Mat blur(Mat image) {
-        // 高斯模糊
-        Mat dst = new Mat();
-        Imgproc.GaussianBlur(image, dst, new Size(15, 15), 0);
-        return dst;
-    }
-
-
-    public Mat gradient(Mat image) {
-        // 梯度
-        Mat grad_x = new Mat();
-        Mat grad_y = new Mat();
-        Mat abs_grad_x = new Mat();
-        Mat abs_grad_y = new Mat();
-
-        Imgproc.Sobel(image, grad_x, CvType.CV_32F, 1, 0);
-        Imgproc.Sobel(image, grad_y, CvType.CV_32F, 0, 1);
-        Core.convertScaleAbs(grad_x, abs_grad_x);
-        Core.convertScaleAbs(grad_y, abs_grad_y);
-        grad_x.release();
-        grad_y.release();
-        Mat gradxy = new Mat();
-        Core.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 10, gradxy);
-        return gradxy;
-    }
+    
+    
+    
+    public static Mat FeatureSurfBruteforce(Mat src, Mat dst){  
+    	long start = System.currentTimeMillis();
+        FeatureDetector fd = FeatureDetector.create(FeatureDetector.SURF);  
+        DescriptorExtractor de = DescriptorExtractor.create(DescriptorExtractor.SURF);  
+        DescriptorMatcher Matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_L1);         
+        MatOfKeyPoint mkp = new MatOfKeyPoint();  
+        fd.detect(src, mkp);  Mat desc = new Mat();  
+        de.compute(src, mkp, desc);  
+        Features2d.drawKeypoints(src, mkp, src);         
+        MatOfKeyPoint mkp2 = new MatOfKeyPoint();  
+        fd.detect(dst, mkp2);  Mat desc2 = new Mat();  
+        de.compute(dst, mkp2, desc2);  
+        Features2d.drawKeypoints(dst, mkp2, dst);  
+        MatOfDMatch Matches = new MatOfDMatch();  
+        Matcher.match(desc, desc2, Matches);          
+        double maxDist = Double.MIN_VALUE;  
+        double minDist = Double.MAX_VALUE;  
+        System.out.println("获取特征点个数"+Matches.rows());
+        DMatch[] mats = Matches.toArray();  
+        for (int i = 0; i < mats.length; i++) {  
+            double dist = mats[i].distance;  
+            if (dist < minDist) {minDist = dist;}                 
+            if (dist > maxDist) {maxDist = dist;}}                  
+        List<DMatch> goodMatch = new LinkedList<>();  
+        for (int i = 0; i < mats.length; i++) {  
+            double dist = mats[i].distance;  
+            if (dist < 3 * minDist && dist < 0.2f) {goodMatch.add(mats[i]);}}       
+        Matches.fromList(goodMatch);  
+        System.out.println("有效特征点个数"+Matches.rows());
+        Mat OutImage = new Mat();  
+        Features2d.drawMatches(src, mkp, dst, mkp2, Matches, OutImage);       
+        Highgui.imwrite("D:\\picture\\detection\\result_surf.jpg", OutImage); 
+        System.out.println("识别用时："+(System.currentTimeMillis() - start)+"ms");
+        return OutImage;  
+    } 
+    
+    
+    
+    
+    public static Mat FeatureSiftLannbased(Mat src, Mat dst){ 
+    	long start = System.currentTimeMillis();
+        FeatureDetector fd = FeatureDetector.create(FeatureDetector.SIFT);  
+        DescriptorExtractor de = DescriptorExtractor.create(DescriptorExtractor.SIFT);  
+        DescriptorMatcher Matcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);           
+        MatOfKeyPoint mkp = new MatOfKeyPoint();  
+        fd.detect(src, mkp);  
+        Mat desc = new Mat();  
+        de.compute(src, mkp, desc);  
+        Features2d.drawKeypoints(src, mkp, src);         
+        MatOfKeyPoint mkp2 = new MatOfKeyPoint();  
+        fd.detect(dst, mkp2);  
+        Mat desc2 = new Mat();  
+        de.compute(dst, mkp2, desc2);  
+        Features2d.drawKeypoints(dst, mkp2, dst);   
+        MatOfDMatch Matches = new MatOfDMatch();  
+        Matcher.match(desc, desc2, Matches);  
+        System.out.println("获取特征点个数"+Matches.rows());  
+        List<DMatch> l = Matches.toList();  
+        List<DMatch> goodMatch = new ArrayList<DMatch>();  
+        for (int i = 0; i < l.size(); i++) {  
+            DMatch dmatch = l.get(i);  
+            if (Math.abs(dmatch.queryIdx - dmatch.trainIdx) < 10f) {  
+                goodMatch.add(dmatch);  
+            }        
+        }          
+        Matches.fromList(goodMatch);  
+        System.out.println("有效特征点个数"+Matches.rows());  
+        Mat OutImage = new Mat();  
+        Features2d.drawMatches(src, mkp, dst, mkp2, Matches, OutImage);           
+        Highgui.imwrite("D:\\picture\\detection\\result_sift.jpg", OutImage); 
+        long end = System.currentTimeMillis();
+        System.out.println("识别用时："+(end - start)+"ms");
+        return OutImage;  
+    }  
 }

@@ -18,14 +18,12 @@ public class Function {
 	public static boolean regist(Users user) throws ClassNotFoundException, SQLException{
 		FunctionBase mbs = new FunctionBase();
 		Connection con1 = mbs.linking();
-		boolean flag = isExist(user.getUsername(),con1);//用户已存在返回true
-		
 		System.out.println("判断用户是否已注册");
+		boolean flag = isExist(user.getUsername(),con1);//用户已存在返回true
 		if(flag) {
 			con1.close();
 			return false;
-		}
-		
+		}	
 		System.out.println("开始在数据库中插入数据");
 		String sql = "insert into user(username,password,id,headphoto)values(?,?,?,?)";
 		PreparedStatement ps = con1.prepareCall(sql);
@@ -34,7 +32,7 @@ public class Function {
 		ps.setString(3,user.getId().toString());
 		ps.setString(4,user.getHeadphoto());
 		ps.execute();
-		
+		System.out.println("注册成功");
 		ps.close();
 		con1.close();
 		return true;
