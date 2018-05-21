@@ -14,6 +14,7 @@ import java.util.Base64.Decoder;
 
 import org.json.JSONObject;
 import org.opencv.core.Mat;
+import org.opencv.highgui.Highgui;
 
 import com.baidu.aip.face.AipFace;
 import com.baidu.aip.face.MatchRequest;
@@ -100,13 +101,15 @@ public class Face {
 	public static Double faceMarchByOpenCV(String img, String photo) {
 		System.out.println("进入opencv识别模式"); 
 		//将拍摄的图片保存
-		SaveImageByOpenCV(img, "D:\\picture\\detection\\detect.jpg");
+		SaveImageByOpenCV(img, "D:\\picture\\login\\getted_photo.jpg","",false);
 		
 		//检测出人脸并保存
 		System.out.println("检测并保存数据库获取的照片的人脸"); 
-		Mat src = FaceDetection.detectFace("D:\\picture\\database\\opencv_img\\"+photo);
+		Mat src = Highgui.imread("D:\\picture\\register\\"+photo+"\\image_final.jpg"); 
+		//Mat src = FaceDetection.detectFace("D:\\picture\\register\\"+photo+"\\image_final.jpg",false,"");
 		System.out.println("检测并保存登陆用的照片的人脸"); 
-		Mat dst = FaceDetection.detectFace("D:\\picture\\detection\\detect.jpg");
+		Mat dst = Highgui.imread("D:\\picture\\login\\image_final.jpg"); 
+		//Mat dst = FaceDetection.detectFace("D:\\picture\\login\\image_final.jpg",false,"");
 		
 		//人脸识别
 		System.out.println("基于orb的人脸识别");
@@ -118,7 +121,7 @@ public class Face {
 		return 90.00;
 	}
 	
-    public static void SaveImageByOpenCV(String img, String imgFilePath) {  
+    public static void SaveImageByOpenCV(String img, String imgFilePath, String SQLFileName, boolean flag) {  
     	System.out.println("二进制形式保存注册图片"); 
         Decoder decoder = Base64.getDecoder(); 
         try {  
@@ -133,9 +136,11 @@ public class Face {
             OutputStream out = new FileOutputStream(imgFilePath);  
             out.write(bytes);  
             out.flush();  
-            out.close();     
+            out.close();    
         } catch (Exception e) {  
             e.printStackTrace();  
         }  
+        System.out.println("检测是否有人脸存在");
+        Mat src = FaceDetection.detectFace(imgFilePath,flag,SQLFileName);
     }  
 }

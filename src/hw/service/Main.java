@@ -73,9 +73,10 @@ public class Main extends HttpServlet {
 	 */
 	private void register(String username, String img, String password) {
 		Users user = new Users();		
-		String fileName = System.currentTimeMillis()+".jpg";		
-		Face.SaveImageByOpenCV(img, "D:\\picture\\database\\opencv_img\\"+fileName);
-		Face.SaveImageByBaidu(img, "D:\\picture\\database\\baidu_img\\"+fileName);
+		String fileName = String.valueOf(System.currentTimeMillis());
+		//保存的图片流，保存地址，映射在数据库的文件名，是否是注册时的保存
+		Face.SaveImageByOpenCV(img, "D:\\picture\\database\\opencv_img\\getted_photo.jpg",fileName, true);
+		Face.SaveImageByBaidu(img, "D:\\picture\\database\\baidu_img\\"+fileName+".jpg");
 
 		//写入数据到实体类中
         user.setId(((Long)System.currentTimeMillis()).intValue());  
