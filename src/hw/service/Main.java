@@ -52,8 +52,8 @@ public class Main extends HttpServlet {
 			if(photo.equals("null")) {
 				out.print("用户未注册");
 			}else {
-            //result = Face.faceMarchByBaidu(img,photo);  //百度云人脸识别接口
-            result = Face.faceMarchByOpenCV(img,photo);   //OpenCV人脸识别
+            result = Face.faceMarchByBaidu(img,photo);  //百度云人脸识别接口
+            Face.faceMarchByOpenCV(img,photo);   //OpenCV人脸识别
 	            if (result > 80) {  
 	                out.print("登陆成功");    
 	            }else{  

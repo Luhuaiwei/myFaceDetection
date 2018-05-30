@@ -20,12 +20,12 @@ import com.baidu.aip.face.AipFace;
 import com.baidu.aip.face.MatchRequest;
 
 import hw.faceAlgorithm.FaceDetection;
+import hw.faceAlgorithm.Test2;
 
 
 public class Face {
 	
-	public Double faceMarchByBaidu(String img, String photo) {
-		System.out.println("进入百度云人脸识别模式");
+	public static Double faceMarchByBaidu(String img, String photo) {
         String APP_ID = "11184535";  
         String API_KEY = "EPZ2ySr21bcZEfbfe0LattGu";  
         String SECRET_KEY = "ziGfg6aYbnw3vAjMOBpFCHMp88pYMWCd";  
@@ -36,7 +36,7 @@ public class Face {
 		BufferedReader bur = null;
 		StringBuffer sb = null;
 		try {
-			fis = new FileInputStream("D:\\picture\\database\\baidu_img\\"+photo);
+			fis = new FileInputStream("D:\\picture\\database\\baidu_img\\"+photo+".jpg");
 			bur = new BufferedReader(new InputStreamReader(fis));
 			sb = new StringBuffer();		
 			String temp = null;
@@ -58,11 +58,9 @@ public class Face {
 	    ArrayList<MatchRequest> requests = new ArrayList<MatchRequest>();
 	    requests.add(req1);
 	    requests.add(req2);
-
 	    JSONObject res = client.match(requests);
 	    JSONObject jos = (JSONObject) res.get("result");
-	    System.out.println(jos.get("score"));
-	    
+	    System.out.println("识别分数："+jos.get("score"));    
 	    return jos.optDouble("score");		
 	}
 	
@@ -96,21 +94,15 @@ public class Face {
 			}
 		}
 	}  
-	
-
-	public static Double faceMarchByOpenCV(String img, String photo) {
-		System.out.println("进入opencv识别模式"); 
+	public static Double faceMarchByOpenCV(String img, String photo) {		
 		//将拍摄的图片保存
 		SaveImageByOpenCV(img, "D:\\picture\\login\\getted_photo.jpg","",false);
-		
+		Test2.lhw();//误匹配问题的测试
 		//检测出人脸并保存
 		System.out.println("检测并保存数据库获取的照片的人脸"); 
 		Mat src = Highgui.imread("D:\\picture\\register\\"+photo+"\\image_final.jpg"); 
-		//Mat src = FaceDetection.detectFace("D:\\picture\\register\\"+photo+"\\image_final.jpg",false,"");
 		System.out.println("检测并保存登陆用的照片的人脸"); 
-		Mat dst = Highgui.imread("D:\\picture\\login\\image_final.jpg"); 
-		//Mat dst = FaceDetection.detectFace("D:\\picture\\login\\image_final.jpg",false,"");
-		
+		Mat dst = Highgui.imread("D:\\picture\\login\\image_final.jpg"); 	
 		//人脸识别
 		System.out.println("基于orb的人脸识别");
 		FaceDetection.FeatureOrbLannbased(src, dst);
